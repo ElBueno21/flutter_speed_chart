@@ -641,7 +641,7 @@ class _SpeedLineChartState extends State<SpeedLineChart> {
                 width: slidingButtonWidth + _leftSlidingBtnLeft,
                 height: double.infinity,
                 padding: EdgeInsets.only(left: _leftSlidingBtnLeft),
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   color: Colors.transparent,
                 ),
                 child: GestureDetector(
@@ -661,7 +661,7 @@ class _SpeedLineChartState extends State<SpeedLineChart> {
                         //     topLeft: Radius.circular(40.0),
                         //     bottomLeft: Radius.circular(40.0)),
                         ),
-                    child: Icon(
+                    child: const Icon(
                       Icons.chevron_left,
                       color: Colors.white,
                     ),
@@ -675,7 +675,7 @@ class _SpeedLineChartState extends State<SpeedLineChart> {
                   width: slidingButtonWidth + _rightSlidingBtnRight,
                   padding: EdgeInsets.only(right: _rightSlidingBtnRight),
                   height: double.infinity,
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: Colors.transparent,
                   ),
                   alignment: Alignment.centerLeft,
@@ -690,7 +690,7 @@ class _SpeedLineChartState extends State<SpeedLineChart> {
                           color: widget.scaleThumbsColor,
                           shape: BoxShape.circle,
                           border: Border.all(color: Colors.white)),
-                      child: Icon(
+                      child: const Icon(
                         Icons.chevron_right,
                         color: Colors.white,
                       ),
@@ -817,8 +817,8 @@ class _SpeedLineChartState extends State<SpeedLineChart> {
               },
               onScaleUpdate: (details) {
                 // newScale >= 1.0, 否則計算 left.clamp((newScale - 1) * -widgetWidth, 0.0) 時範圍會錯誤
-                print(
-                    'Scale update ${details.focalPoint.dx}, ${_lastUpdateFocalPointX}');
+                debugPrint(
+                    'Scale update ${details.focalPoint.dx}, $_lastUpdateFocalPointX');
 
                 if (_showTrackball) {
                   setState(() {
@@ -874,8 +874,8 @@ class _SpeedLineChartState extends State<SpeedLineChart> {
                 });
               },
               onTapDown: (details) {
-                print('onTapDown');
-                _onPressTimer ??= Timer(Duration(milliseconds: 200), () {
+                debugPrint('onTapDown');
+                _onPressTimer ??= Timer(const Duration(milliseconds: 200), () {
                   // 時間到的時候判斷按下是否有移動, 如果沒有則顯示 trackball
                   // print('timer ${_deltaFocalPointX}');
                   if (_deltaFocalPointX == 0) {
