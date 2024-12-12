@@ -1,6 +1,7 @@
+import 'dart:math';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
-import 'package:speed_chart/src/value_pair.dart';
+import 'package:speed_chart/speed_chart.dart';
 import 'package:speed_chart/src/speed_line_chart.dart';
 import 'package:intl/intl.dart';
 
@@ -24,6 +25,8 @@ class LineChartPainter extends CustomPainter {
     required this.yRanges,
     required this.axisPaint,
     required this.verticalLinePaint,
+    required this.plotBands,
+    required this.timeZoneAbrv,
   });
 
   final List<LineSeriesX> lineSeriesXCollection;
@@ -44,7 +47,8 @@ class LineChartPainter extends CustomPainter {
   final List<double> yRanges;
   final Paint axisPaint;
   final Paint verticalLinePaint;
-
+  final List<PlotBand> plotBands;
+  final String timeZoneAbrv;
   final TextPainter _axisLabelPainter = TextPainter(
     textAlign: TextAlign.right,
     textDirection: ui.TextDirection.ltr,
@@ -110,7 +114,7 @@ class LineChartPainter extends CustomPainter {
   }
 
   String _formatDate(DateTime date) {
-    return DateFormat('yyyy-MM-dd HH:mm:ss').format(date).toString();
+    return '${DateFormat('yyyy-MM-dd HH:mm:ss').format(date)} $timeZoneAbrv';
   }
 
   // Draw Y-Axis
@@ -308,7 +312,34 @@ class LineChartPainter extends CustomPainter {
     }
   }
 
-  // Draw vertical track line and tip
+  double _calculateTooltipDimensions({
+    required Map<int, String> tips,
+    required double Function(int) getIconWidth,
+    required Size size,
+    required double xStep,
+    required int closestIndex,
+  }) {
+    double maxWidth = 0;
+    const double padding = 16;
+    const double iconTextGap = 8;
+
+    for (MapEntry entry in tips.entries) {
+      _tipTextPainter.text = TextSpan(
+        text: entry.value,
+        style: const TextStyle(color: Colors.black),
+      );
+
+      _tipTextPainter.layout();
+
+      double rowWidth = _tipTextPainter.width;
+      if (entry.key != -1) {
+        rowWidth += getIconWidth(entry.key) + iconTextGap;
+      }
+      maxWidth = max(maxWidth, rowWidth);
+    }
+    return maxWidth + padding * 2;
+  }
+
   void _drawTrackBall({
     required Canvas canvas,
     required Size size,
@@ -317,140 +348,226 @@ class LineChartPainter extends CustomPainter {
     int nonNullValueIndex =
         longestLineSeriesX.dataList.indexWhere((element) => element.y != null);
 
-    // If all line series values are null, don't draw the trackball
-    if (nonNullValueIndex != -1) {
-      double adjustedLongPressX = 0.0;
-      if (showMultipleYAxises) {
-        double newLeftOffset = 40 * (lineSeriesXCollection.length - 1);
-        adjustedLongPressX = longPressX - newLeftOffset;
-        adjustedLongPressX = adjustedLongPressX.clamp(0.0, size.width);
-      } else {
-        adjustedLongPressX = longPressX.clamp(0.0, size.width);
-      }
+    if (nonNullValueIndex == -1) return;
 
-      int? closestIndex = _findClosestIndex(
-        x: adjustedLongPressX,
-        offsetX: offset,
-        xStep: xStep,
+    double adjustedLongPressX = 0.0;
+    if (showMultipleYAxises) {
+      double newLeftOffset = 40 * (lineSeriesXCollection.length - 1);
+
+      adjustedLongPressX = (longPressX - newLeftOffset).clamp(0.0, size.width);
+    } else {
+      adjustedLongPressX = longPressX.clamp(0.0, size.width);
+    }
+
+    int? closestIndex = _findClosestIndex(
+      x: adjustedLongPressX,
+      offsetX: offset,
+      xStep: xStep,
+    );
+
+    if (closestIndex == null) return;
+
+    // Draw vertical line
+
+    canvas.drawLine(
+      Offset((closestIndex * xStep), 0),
+      Offset((closestIndex * xStep), size.height),
+      verticalLinePaint,
+    );
+
+    String formatXLabel = '';
+
+    if (longestLineSeriesX.dataList[closestIndex].x is DateTime) {
+      DateTime closestDateTime =
+          longestLineSeriesX.dataList[closestIndex].x as DateTime;
+
+      formatXLabel = _formatDate(closestDateTime);
+    } else {
+      int closestX = longestLineSeriesX.dataList[closestIndex].x as int;
+
+      formatXLabel = closestX.toString();
+    }
+
+    // Find matching plot bands
+    List<PlotBand> matchingPlotBands = plotBands.where((band) {
+      DateTime pointDateTime =
+          longestLineSeriesX.dataList[closestIndex].x as DateTime;
+
+      return (pointDateTime.isAfter(band.startValue) ||
+              pointDateTime.isAtSameMomentAs(band.startValue)) &&
+          (pointDateTime.isBefore(band.endValue) ||
+              pointDateTime.isAtSameMomentAs(band.endValue));
+    }).toList();
+
+    // Get values and create tips
+
+    List<Map<int, double?>> valueMapList = _getYByClosetIndex(closestIndex);
+    Map<int, String> tips = {-1: formatXLabel};
+
+    // Add line series values first (positive keys)
+    for (Map<int, double?> valueMap in valueMapList) {
+      MapEntry nameValueEntry = valueMap.entries.toList()[0];
+      if (nameValueEntry.value != null) {
+        tips[nameValueEntry.key] =
+            '${lineSeriesXCollection[nameValueEntry.key].name} : ${nameValueEntry.value}';
+      }
+    }
+
+    // Add plot band information last (negative keys)
+
+    if (matchingPlotBands.isNotEmpty) {
+      for (int i = 0; i < matchingPlotBands.length; i++) {
+        PlotBand band = matchingPlotBands[i];
+        // Format duration text
+        String durationText;
+        if (band.totalDurSec < 60) {
+          durationText = "< 1m";
+        } else {
+          int durationHours = (band.totalDurSec / 3600).floor();
+          int durationMinutes = ((band.totalDurSec % 3600) / 60).floor();
+          durationText = "${durationHours}H ${durationMinutes}m";
+        }
+        tips[-2 - i] =
+            'Irrigation: $durationText | ${band.totalVol} ${band.units}';
+      }
+    }
+
+    // Calculate tooltip dimensions
+
+    const double rowHeight = 20;
+    const double padding = 16;
+    const double bottomPadding = 10;
+    const double iconSize = 12;
+    double totalHeight = (tips.length * rowHeight) + padding + bottomPadding;
+    double maxWidth = _calculateTooltipDimensions(
+      tips: tips,
+      getIconWidth: (key) => iconSize,
+      size: size,
+      xStep: xStep,
+      closestIndex: closestIndex,
+    );
+
+    // Calculate tooltip position
+    double textX = (closestIndex * xStep) + 10;
+    double textY = size.height / 2 - totalHeight / 2;
+    double lineSeriesLeftOffset = showMultipleYAxises
+        ? 40.0 * (lineSeriesXCollection.length)
+        : leftOffset;
+    double outOfBoundWidth = (textX - 4) +
+        maxWidth -
+        (size.width - lineSeriesLeftOffset - rightOffset) +
+        offset;
+    double adjustedTextX = outOfBoundWidth > 0 ? outOfBoundWidth : 0;
+
+    // Draw tooltip background
+    Rect tooltipRect = Rect.fromLTWH(
+      textX - 4 - adjustedTextX,
+      textY,
+      maxWidth,
+      totalHeight,
+    );
+
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(tooltipRect, const Radius.circular(4)),
+      Paint()..color = Colors.white,
+    );
+
+    // Draw content
+    double currentY = textY + padding / 2;
+
+    // Draw datetime
+    _tipTextPainter.text = TextSpan(
+      text: tips[-1],
+      style: const TextStyle(
+        color: Colors.black,
+        fontWeight: FontWeight.bold,
+      ),
+    );
+
+    _tipTextPainter.layout();
+
+    _tipTextPainter.paint(
+        canvas, Offset(textX - adjustedTextX + padding / 2, currentY));
+
+    currentY += rowHeight;
+
+    // Draw divider
+    canvas.drawLine(
+      Offset(textX - adjustedTextX + padding / 2, currentY),
+      Offset(textX - adjustedTextX + maxWidth - padding / 2, currentY),
+      _dividerPaint,
+    );
+
+    currentY += rowHeight / 2;
+
+    // Draw line series info first
+    for (MapEntry entry in tips.entries.where((e) => e.key >= 0)) {
+      Paint circlePaint = Paint()
+        ..color = lineSeriesXCollection[entry.key].color;
+
+      // Draw circle
+      canvas.drawCircle(
+        Offset(
+          textX - adjustedTextX + padding / 2 + iconSize / 2,
+          currentY + rowHeight / 2,
+        ),
+        iconSize / 2,
+        circlePaint,
       );
 
-      if (closestIndex != null) {
-        // Draw vertical line at the closest point
-        canvas.drawLine(
-          Offset((closestIndex * xStep), 0),
-          Offset((closestIndex * xStep), size.height),
-          verticalLinePaint,
-        );
+      // Draw text
+      _tipTextPainter.text = TextSpan(
+        text: entry.value,
+        style: const TextStyle(color: Colors.black),
+      );
 
-        String formatXLabel = '';
-        if (longestLineSeriesX.dataList[closestIndex].x is DateTime) {
-          DateTime closestDateTime =
-              longestLineSeriesX.dataList[closestIndex].x as DateTime;
-          formatXLabel = _formatDate(closestDateTime);
-        } else {
-          int closestX = longestLineSeriesX.dataList[closestIndex].x as int;
-          formatXLabel = closestX.toString();
-        }
+      _tipTextPainter.layout();
+      _tipTextPainter.paint(
+        canvas,
+        Offset(
+          textX - adjustedTextX + padding / 2 + iconSize + 8,
+          currentY + (rowHeight - _tipTextPainter.height) / 2,
+        ),
+      );
 
-        List<Map<int, double?>> valueMapList = _getYByClosetIndex(closestIndex);
-        Map<int, String> tips = {-1: formatXLabel};
+      currentY += rowHeight;
+    }
 
-        for (Map<int, double?> valueMap in valueMapList) {
-          MapEntry nameValueEntry = valueMap.entries.toList()[0];
-          if (nameValueEntry.value != null) {
-            tips[nameValueEntry.key] =
-                '${lineSeriesXCollection[nameValueEntry.key].name} : ${nameValueEntry.value}';
-          }
-        }
+    // Draw plot bands info last
+    for (MapEntry entry in tips.entries.where((e) => e.key < -1)) {
+      int plotBandIndex = (-2 - entry.key).toInt();
 
-        String longestTip = tips.values.reduce((value, element) =>
-            value.length >= element.length ? value : element);
+      PlotBand plotBand = matchingPlotBands[plotBandIndex];
 
-        _tipTextPainter.text = TextSpan(
-          text: longestTip,
-          style: const TextStyle(
-            color: Colors.black,
-          ),
-        );
+      // Draw square
+      canvas.drawRect(
+        Rect.fromLTWH(
+          textX - adjustedTextX + padding / 2,
+          currentY + (rowHeight - iconSize) / 2,
+          iconSize,
+          iconSize,
+        ),
+        Paint()
+          ..color = plotBand.color
+          ..style = PaintingStyle.fill,
+      );
 
-        _tipTextPainter.layout();
+      // Draw text
+      _tipTextPainter.text = TextSpan(
+        text: entry.value,
+        style: const TextStyle(color: Colors.black),
+      );
 
-        double rectWidth = _tipTextPainter.width + 16; // Add padding
-        double tooltipHeight =
-            14.0 * (tips.length + 1) + 8; // Adjust dynamic height
-        double textX = (closestIndex * xStep) + 10;
-        double textY = size.height / 2 - tooltipHeight / 2;
+      _tipTextPainter.layout();
+      _tipTextPainter.paint(
+        canvas,
+        Offset(
+          textX - adjustedTextX + padding / 2 + iconSize + 8,
+          currentY + (rowHeight - _tipTextPainter.height) / 2,
+        ),
+      );
 
-        double lineSeriesLeftOffset = 0.0;
-        if (showMultipleYAxises) {
-          lineSeriesLeftOffset = 40.0 * (lineSeriesXCollection.length);
-        } else {
-          lineSeriesLeftOffset = leftOffset;
-        }
-
-        double outOfBoundWidth = (textX - 4) +
-            rectWidth -
-            (size.width - lineSeriesLeftOffset - rightOffset) +
-            offset;
-        double adjustedTextX = outOfBoundWidth > 0 ? outOfBoundWidth : 0;
-
-        Rect tooltipRect = Rect.fromLTWH(
-          textX - 4 - adjustedTextX,
-          textY,
-          rectWidth,
-          tooltipHeight,
-        );
-
-        Paint rectPaint = Paint()..color = Colors.white;
-        RRect roundedTooltip =
-            RRect.fromRectAndRadius(tooltipRect, const Radius.circular(4));
-        canvas.drawRRect(roundedTooltip, rectPaint);
-
-        _tipTextPainter.text = TextSpan(
-          text: tips[-1], // Draw datetime
-          style: const TextStyle(
-            color: Colors.black,
-          ),
-        );
-        _tipTextPainter.layout();
-        _tipTextPainter.paint(canvas, Offset(textX - adjustedTextX, textY + 4));
-
-        canvas.drawLine(
-            Offset(textX - adjustedTextX, textY + 18),
-            Offset(textX - adjustedTextX + rectWidth - 8, textY + 18),
-            _dividerPaint);
-
-        double rowStartY = textY + 15; // Adjust spacing between rows
-        int tipRowCount = 1;
-        for (MapEntry entry in tips.entries) {
-          if (entry.key != -1) {
-            Paint circlePaint = Paint()
-              ..color = lineSeriesXCollection[entry.key].color;
-
-            Offset circleCenter =
-                Offset(textX + 4 - adjustedTextX, rowStartY + 16 * tipRowCount);
-            canvas.drawCircle(circleCenter, 4, circlePaint);
-
-            _tipTextPainter.text = TextSpan(
-              text: entry.value,
-              style: const TextStyle(
-                color: Colors.black,
-              ),
-            );
-            _tipTextPainter.layout();
-
-            _tipTextPainter.paint(
-              canvas,
-              Offset(
-                textX - adjustedTextX + 10,
-                rowStartY + 16 * tipRowCount - _tipTextPainter.height / 2,
-              ),
-            );
-
-            tipRowCount += 1;
-          }
-        }
-      }
+      currentY += rowHeight;
     }
   }
 
@@ -583,6 +700,7 @@ class LineChartPainter extends CustomPainter {
     // current (left,top) => (0,0)
     canvas.save();
 
+    // Set up the xStep calculation
     double xStep = 0.0;
 
     if (showMultipleYAxises) {
@@ -634,6 +752,76 @@ class LineChartPainter extends CustomPainter {
       canvas.clipRect(Rect.fromPoints(Offset(leftOffset, 0),
           Offset(size.width - rightOffset, size.height)));
       canvas.translate(leftOffset + offset, 0);
+    }
+
+    // Draw plot bands first (they should be behind the lines)
+    // Inside the paint method, update the plot band drawing code:
+    for (final plotBand in plotBands) {
+      if (plotBand.isValid()) {
+        final paint = Paint()
+          ..color = plotBand.color.withOpacity(plotBand.opacity)
+          ..style = PaintingStyle.fill;
+
+        // Get the actual data points for reference
+        final List<ValuePair> dataPoints = longestLineSeriesX.dataList;
+
+        // Find the exact position in the data series
+        double startX = 0;
+        double endX = 0;
+
+        // Calculate exact positions by finding the nearest data points
+        for (int i = 0; i < dataPoints.length; i++) {
+          DateTime currentDate = dataPoints[i].x as DateTime;
+
+          // Find start position
+          if (currentDate.isAtSameMomentAs(plotBand.startValue) ||
+              (i < dataPoints.length - 1 &&
+                  currentDate.isBefore(plotBand.startValue) &&
+                  (dataPoints[i + 1].x as DateTime)
+                      .isAfter(plotBand.startValue))) {
+            // Interpolate position if between points
+
+            if (!currentDate.isAtSameMomentAs(plotBand.startValue) &&
+                i < dataPoints.length - 1) {
+              DateTime nextDate = dataPoints[i + 1].x as DateTime;
+              double progress =
+                  plotBand.startValue.difference(currentDate).inMilliseconds /
+                      nextDate.difference(currentDate).inMilliseconds;
+
+              startX = (i + progress) * xStep;
+            } else {
+              startX = i * xStep;
+            }
+          }
+
+          // Find end position
+          if (currentDate.isAtSameMomentAs(plotBand.endValue) ||
+              (i < dataPoints.length - 1 &&
+                  currentDate.isBefore(plotBand.endValue) &&
+                  (dataPoints[i + 1].x as DateTime)
+                      .isAfter(plotBand.endValue))) {
+            // Interpolate position if between points
+
+            if (!currentDate.isAtSameMomentAs(plotBand.endValue) &&
+                i < dataPoints.length - 1) {
+              DateTime nextDate = dataPoints[i + 1].x as DateTime;
+              double progress =
+                  plotBand.endValue.difference(currentDate).inMilliseconds /
+                      nextDate.difference(currentDate).inMilliseconds;
+
+              endX = (i + progress) * xStep;
+            } else {
+              endX = i * xStep;
+            }
+          }
+        }
+
+        // Draw the plot band using the exact positions
+        canvas.drawRect(
+          Rect.fromLTRB(startX, 0, endX, size.height),
+          paint,
+        );
+      }
     }
 
     // Draw line series

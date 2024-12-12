@@ -58,6 +58,26 @@ class _FullScreenChartFormState extends State<FullScreenChartForm> {
                   showLegend: true,
                   showMultipleYAxises: true,
                   showScaleThumbs: true,
+                  plotBands: [
+                    PlotBand(
+                      startValue: DateTime.parse('2022-05-16 00:51:38'),
+                      endValue: DateTime.parse('2022-05-26 00:52:28'),
+                      color: Colors.red,
+                      opacity: 0.3,
+                    ),
+                    PlotBand(
+                      startValue: DateTime.parse('2022-06-16 00:52:28'),
+                      endValue: DateTime.parse('2022-06-26 00:53:38'),
+                      color: Colors.green,
+                      opacity: 0.3,
+                    ),
+                    PlotBand(
+                      startValue: DateTime.parse('2022-07-16 00:53:38'),
+                      endValue: DateTime.parse('2022-07-26 00:54:38'),
+                      color: Colors.blue,
+                      opacity: 0.3,
+                    ),
+                  ],
                 ),
               ],
             ),
