@@ -99,39 +99,93 @@ class _SpeedLineChartState extends State<SpeedLineChart> {
   Size? _currentSize;
   Size? _previousSize;
 
+  // List<LineSeriesX> _getLineSeriesXCollection() {
+  //   List<LineSeriesX> lineSeriesXCollection = [];
+
+  //   for (LineSeries lineSeries in widget.lineSeriesCollection) {
+  //     Map<dynamic, double?> dataMap = {};
+
+  //     List<int> startIndexes = [];
+
+  //     for (int i = 0; i < lineSeries.dataList.length; i++) {
+  //       dynamic x = lineSeries.dataList[i].x;
+
+  //       double? y = lineSeries.dataList[i].y;
+
+  //       dataMap[x] = y;
+
+  //       if (i > 0) {
+  //         if (y != null && lineSeries.dataList[i - 1].y == null) {
+  //           startIndexes.add(i);
+  //         }
+  //       }
+  //     }
+
+  //     lineSeriesXCollection.add(LineSeriesX(
+  //       name: lineSeries.name,
+  //       color: lineSeries.color,
+  //       dataList: lineSeries.dataList, // reference
+  //       dataMap: dataMap,
+  //       startIndexes: startIndexes,
+  //       minYAxisValue: lineSeries.minYAxisValue,
+  //       maxYAxisValue: lineSeries.maxYAxisValue,
+  //     ));
+  //   }
+
+  //   return lineSeriesXCollection;
+  // }
+
   List<LineSeriesX> _getLineSeriesXCollection() {
     List<LineSeriesX> lineSeriesXCollection = [];
 
+    // Step 1: Get all unique timestamps from all series
+    Set<dynamic> allTimestamps = {};
+    for (var lineSeries in widget.lineSeriesCollection) {
+      for (var point in lineSeries.dataList) {
+        allTimestamps.add(point.x);
+      }
+    }
+    List<dynamic> sortedTimestamps = allTimestamps.toList()..sort();
+
+    // Step 2: Align each series to the unified timestamps
     for (LineSeries lineSeries in widget.lineSeriesCollection) {
       Map<dynamic, double?> dataMap = {};
-
+      List<ValuePair> alignedDataList = [];
       List<int> startIndexes = [];
 
-      for (int i = 0; i < lineSeries.dataList.length; i++) {
-        dynamic x = lineSeries.dataList[i].x;
-
-        double? y = lineSeries.dataList[i].y;
-
-        dataMap[x] = y;
-
-        if (i > 0) {
-          if (y != null && lineSeries.dataList[i - 1].y == null) {
-            startIndexes.add(i);
-          }
-        }
+      // Initialize all timestamps with null
+      for (var timestamp in sortedTimestamps) {
+        dataMap[timestamp] = null;
       }
 
+      // Populate actual values
+      for (var point in lineSeries.dataList) {
+        dataMap[point.x] = point.y;
+      }
+
+      // Convert the map to ValuePair list
+      int index = 0;
+      for (var timestamp in sortedTimestamps) {
+        alignedDataList.add(ValuePair(x: timestamp, y: dataMap[timestamp]));
+        if (index > 0 &&
+            dataMap[timestamp] != null &&
+            alignedDataList[index - 1].y == null) {
+          startIndexes.add(index);
+        }
+        index++;
+      }
+
+      // Add to LineSeriesX
       lineSeriesXCollection.add(LineSeriesX(
         name: lineSeries.name,
         color: lineSeries.color,
-        dataList: lineSeries.dataList, // reference
+        dataList: alignedDataList,
         dataMap: dataMap,
         startIndexes: startIndexes,
         minYAxisValue: lineSeries.minYAxisValue,
         maxYAxisValue: lineSeries.maxYAxisValue,
       ));
     }
-
     return lineSeriesXCollection;
   }
 
