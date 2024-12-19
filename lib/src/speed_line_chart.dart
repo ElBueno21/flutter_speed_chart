@@ -99,42 +99,6 @@ class _SpeedLineChartState extends State<SpeedLineChart> {
   Size? _currentSize;
   Size? _previousSize;
 
-  // List<LineSeriesX> _getLineSeriesXCollection() {
-  //   List<LineSeriesX> lineSeriesXCollection = [];
-
-  //   for (LineSeries lineSeries in widget.lineSeriesCollection) {
-  //     Map<dynamic, double?> dataMap = {};
-
-  //     List<int> startIndexes = [];
-
-  //     for (int i = 0; i < lineSeries.dataList.length; i++) {
-  //       dynamic x = lineSeries.dataList[i].x;
-
-  //       double? y = lineSeries.dataList[i].y;
-
-  //       dataMap[x] = y;
-
-  //       if (i > 0) {
-  //         if (y != null && lineSeries.dataList[i - 1].y == null) {
-  //           startIndexes.add(i);
-  //         }
-  //       }
-  //     }
-
-  //     lineSeriesXCollection.add(LineSeriesX(
-  //       name: lineSeries.name,
-  //       color: lineSeries.color,
-  //       dataList: lineSeries.dataList, // reference
-  //       dataMap: dataMap,
-  //       startIndexes: startIndexes,
-  //       minYAxisValue: lineSeries.minYAxisValue,
-  //       maxYAxisValue: lineSeries.maxYAxisValue,
-  //     ));
-  //   }
-
-  //   return lineSeriesXCollection;
-  // }
-
   List<LineSeriesX> _getLineSeriesXCollection() {
     List<LineSeriesX> lineSeriesXCollection = [];
 
@@ -231,175 +195,91 @@ class _SpeedLineChartState extends State<SpeedLineChart> {
     return minimumYAxisValue;
   }
 
+  // void setMinValueAndMaxValue() {
+  //   List<double?> allValues = _lineSeriesXCollection
+  //       .expand((lineSeries) => lineSeries.dataMap.values)
+  //       .toList();
+
+  //   allValues.removeWhere((element) => element == null);
+
+  //   if (allValues.isNotEmpty) {
+  //     // Find the actual min and max values
+  //     double actualMin = allValues
+  //         .reduce((value, element) => value! < element! ? value : element)!;
+  //     double actualMax = allValues
+  //         .reduce((value, element) => value! > element! ? value : element)!;
+
+  //     // Calculate the range
+  //     double range = actualMax - actualMin;
+
+  //     // Prevent division by zero or invalid range
+  //     double buffer = range > 0 ? range * 0.10 : 1.0;
+
+  //     _minValue = actualMin - buffer;
+  //     _maxValue = actualMax + buffer;
+  //   } else {
+  //     _minValue = 0.0;
+  //     _maxValue = 10.0;
+  //   }
+  // }
+
   void setMinValueAndMaxValue() {
     List<double?> allValues = _lineSeriesXCollection
         .expand((lineSeries) => lineSeries.dataMap.values)
         .toList();
 
-    List<double> allMaxYAxisValues = [];
-    List<double> allMinYAxisValues = [];
-
-    for (LineSeriesX lineSeriesX in _lineSeriesXCollection) {
-      if (lineSeriesX.maxYAxisValue != null) {
-        allMaxYAxisValues.add(lineSeriesX.maxYAxisValue!);
-      }
-
-      if (lineSeriesX.minYAxisValue != null) {
-        allMinYAxisValues.add(lineSeriesX.minYAxisValue!);
-      }
-    }
-
     allValues.removeWhere((element) => element == null);
 
-    List<double?> allNonNullValues = [];
-    allNonNullValues.addAll(allValues);
-
-    if (allNonNullValues.isNotEmpty) {
-      double tempMinValue = 0.0;
-      double tempMaxValue = 0.0;
-
-      tempMinValue = allNonNullValues
-          .map((value) => value)
+    if (allValues.isNotEmpty) {
+      // Find the global min and max values across all series
+      double actualMin = allValues
           .reduce((value, element) => value! < element! ? value : element)!;
-
-      tempMaxValue = allNonNullValues
-          .map((value) => value)
+      double actualMax = allValues
           .reduce((value, element) => value! > element! ? value : element)!;
 
-      // 如果 lineseries 中有設定 MinYAxisValues
-      if (allMinYAxisValues.isNotEmpty) {
-        _minValue = allMinYAxisValues
-            .map((value) => value)
-            .reduce((value, element) => value < element ? value : element);
-      } else {
-        _minValue = getMinimumYAxisValue(
-          tempMaxValue: tempMaxValue,
-          tempMinValue: tempMinValue,
-        );
-      }
+      // Calculate the range
+      double range = actualMax - actualMin;
 
-      // 如果 lineseries 中有設定 MaxYAxisValues
-      if (allMaxYAxisValues.isNotEmpty) {
-        _maxValue = allMaxYAxisValues
-            .map((value) => value)
-            .reduce((value, element) => value > element ? value : element);
-      } else {
-        _maxValue = getMaximumYAxisValue(
-          tempMaxValue: tempMaxValue,
-          tempMinValue: tempMinValue,
-        );
-      }
-    } else {
-      // 如果沒有資料點, 就看有沒有給 MaxYAxisValues 或 MinYAxisValues
+      // Prevent division by zero or invalid range
+      double buffer = range > 0 ? range * 0.10 : 1.0;
 
-      if (allMinYAxisValues.isNotEmpty) {
-        _minValue = allMinYAxisValues
-            .map((value) => value)
-            .reduce((value, element) => value < element ? value : element);
-      } else {
-        // 沒有資料點, 也沒有 MinYAxisValues, 則預設一個最小值
+      _minValue = actualMin - buffer;
+      _maxValue = actualMax + buffer;
 
+      if (_minValue.isNaN || _maxValue.isNaN) {
         _minValue = 0.0;
-      }
-
-      if (allMaxYAxisValues.isNotEmpty) {
-        _maxValue = allMaxYAxisValues
-            .map((value) => value)
-            .reduce((value, element) => value > element ? value : element);
-      } else {
-        // 沒有資料點, 也沒有 MaxYAxisValues, 則預設一個最大值
-
         _maxValue = 10.0;
       }
+    } else {
+      _minValue = 0.0;
+      _maxValue = 10.0;
     }
   }
 
   void setMinValueAndMaxValueForMultipleYAxis() {
-    List allValues = _lineSeriesXCollection
-        .expand((lineSeries) => lineSeries.dataMap.values)
-        .toList();
+    for (LineSeriesX lineSeries in _lineSeriesXCollection) {
+      List<double?> values = lineSeries.dataMap.values.toList();
 
-    allValues.removeWhere((element) => element == null);
+      values.removeWhere((element) => element == null);
 
-    List allNonNullValues = [];
+      if (values.isNotEmpty) {
+        // Find the actual min and max values for this series
+        double actualMin = values
+            .reduce((value, element) => value! < element! ? value : element)!;
+        double actualMax = values
+            .reduce((value, element) => value! > element! ? value : element)!;
 
-    allNonNullValues.addAll(allValues);
+        // Calculate the range
+        double range = actualMax - actualMin;
 
-    // 如果有資料點
+        // Prevent division by zero or invalid range
+        double buffer = range > 0 ? range * 0.10 : 1.0;
 
-    if (allNonNullValues.isNotEmpty) {
-      for (LineSeriesX lineSeries in _lineSeriesXCollection) {
-        List values = lineSeries.dataMap.values.toList();
-
-        values.removeWhere((element) => element == null);
-
-        List nonNullValues = [];
-
-        nonNullValues.addAll(values);
-
-        double tempMinValue = 0.0;
-
-        double tempMaxValue = 0.0;
-
-        if (nonNullValues.isNotEmpty) {
-          tempMinValue = nonNullValues
-              .map((value) => value)
-              .reduce((value, element) => value! < element! ? value : element)!;
-
-          tempMaxValue = nonNullValues
-              .map((value) => value)
-              .reduce((value, element) => value! > element! ? value : element)!;
-        }
-
-        // 如果 for loop 跑到的 lineSeries 有給 MinYAxisValue
-
-        if (lineSeries.minYAxisValue != null) {
-          _minValues.add(lineSeries.minYAxisValue!);
-        } else {
-          double minValue = getMinimumYAxisValue(
-            tempMaxValue: tempMaxValue,
-            tempMinValue: tempMinValue,
-          );
-
-          _minValues.add(minValue);
-        }
-
-        // 如果 for loop 跑到的 lineSeries 有給 MaxYAxisValue
-
-        if (lineSeries.maxYAxisValue != null) {
-          _maxValues.add(lineSeries.maxYAxisValue!);
-        } else {
-          double maxValue = getMaximumYAxisValue(
-            tempMaxValue: tempMaxValue,
-            tempMinValue: tempMinValue,
-          );
-
-          _maxValues.add(maxValue);
-        }
-      }
-    } else {
-      // 如果沒有資料點, 就用 for loop 一個個看有沒有給 MaxYAxisValues 或 MinYAxisValues
-
-      for (LineSeriesX lineSeries in _lineSeriesXCollection) {
-        // 如果 for loop 跑到的 lineSeries 有給 MinYAxisValue
-
-        if (lineSeries.minYAxisValue != null) {
-          _minValues.add(lineSeries.minYAxisValue!);
-        } else {
-          // 沒有資料點, 也沒有 MinYAxisValues, 則預設一個最小值
-
-          _minValues.add(0.0);
-        }
-
-        // 如果 for loop 跑到的 lineSeries 有給 MaxYAxisValue
-
-        if (lineSeries.maxYAxisValue != null) {
-          _maxValues.add(lineSeries.maxYAxisValue!);
-        } else {
-          // 沒有資料點, 也沒有 MaxYAxisValues, 則預設一個最大值
-
-          _maxValues.add(10.0);
-        }
+        _minValues.add(actualMin - buffer);
+        _maxValues.add(actualMax + buffer);
+      } else {
+        _minValues.add(0.0);
+        _maxValues.add(10.0);
       }
     }
   }
@@ -796,21 +676,12 @@ class _SpeedLineChartState extends State<SpeedLineChart> {
                     height: double.infinity,
                     width: slidingButtonWidth,
                     decoration: BoxDecoration(
-                        color: widget.scaleThumbsColor,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white)
-
-                        // borderRadius: BorderRadius.only(
-
-                        //     topRight: Radius.circular(40.0),
-
-                        //     bottomRight: Radius.circular(40.0),
-
-                        //     topLeft: Radius.circular(40.0),
-
-                        //     bottomLeft: Radius.circular(40.0)),
-
-                        ),
+                      color: widget.scaleThumbsColor,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.white,
+                      ),
+                    ),
                     child: const Icon(
                       Icons.chevron_left,
                       color: Colors.white,

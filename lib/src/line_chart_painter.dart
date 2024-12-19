@@ -572,88 +572,6 @@ class LineChartPainter extends CustomPainter {
     }
   }
 
-  // void _drawLineSeries({
-  //   required Canvas canvas,
-  //   required double xStep,
-  //   required double yStep,
-  // }) {
-  //   for (LineSeriesX lineSeriesX in lineSeriesXCollection) {
-  //     List<ValuePair> data = lineSeriesX.dataList;
-  //     List<int> startIndex = lineSeriesX.startIndexes;
-  //     Path linePath = Path();
-
-  //     Paint linePaint = Paint()
-  //       ..color = lineSeriesX.color
-  //       ..strokeWidth = 2.0
-  //       ..strokeCap = StrokeCap.round
-  //       ..style = PaintingStyle.stroke;
-
-  //     // find the first non null value
-  //     int firstIndex = data.indexWhere((element) => element.y != null);
-  //     if (firstIndex != -1) {
-  //       for (int i = firstIndex; i < data.length; i++) {
-  //         double currentScaleX = (i * xStep);
-  //         double? currentScaleY =
-  //             data[i].y == null ? null : (maxValue - data[i].y!) * yStep;
-
-  //         if (currentScaleY != null) {
-  //           if (i == firstIndex) {
-  //             linePath.moveTo(currentScaleX, currentScaleY);
-  //           }
-
-  //           // if previous index of value is null, Do not draw line near the point
-  //           if (startIndex.contains(i)) {
-  //             linePath.moveTo(currentScaleX, currentScaleY);
-  //           } else {
-  //             linePath.lineTo(currentScaleX, currentScaleY);
-  //           }
-  //         }
-  //       }
-
-  //       canvas.drawPath(linePath, linePaint);
-  //     }
-  //   }
-  // }
-
-  // void _drawLineSeries({
-  //   required Canvas canvas,
-  //   required double xStep,
-  //   required double yStep,
-  // }) {
-  //   for (LineSeriesX lineSeriesX in lineSeriesXCollection) {
-  //     List<ValuePair> data = lineSeriesX.dataList;
-  //     Path linePath = Path();
-
-  //     Paint linePaint = Paint()
-  //       ..color = lineSeriesX.color
-  //       ..strokeWidth = 2.0
-  //       ..strokeCap = StrokeCap.round
-  //       ..style = PaintingStyle.stroke;
-
-  //     bool isMoveTo = true;
-
-  //     for (int i = 0; i < data.length; i++) {
-  //       double currentX = i * xStep;
-  //       double? currentY =
-  //           data[i].y == null ? null : (maxValue - data[i].y!) * yStep;
-
-  //       if (currentY != null) {
-  //         if (isMoveTo) {
-  //           linePath.moveTo(currentX, currentY);
-  //           isMoveTo = false;
-  //         } else {
-  //           linePath.lineTo(currentX, currentY);
-  //         }
-  //       } else {
-  //         // Move to next valid point to create a gap
-  //         isMoveTo = true;
-  //       }
-  //     }
-
-  //     canvas.drawPath(linePath, linePaint);
-  //   }
-  // }
-
   void _drawLineSeries({
     required Canvas canvas,
     required double xStep,
@@ -696,53 +614,6 @@ class LineChartPainter extends CustomPainter {
     }
   }
 
-  // void _drawLineSeriesForMultipleYAxises({
-  //   required Canvas canvas,
-  //   required Size size,
-  //   required double xStep,
-  // }) {
-  //   for (int i = 0; i < lineSeriesXCollection.length; i++) {
-  //     List<ValuePair> data = lineSeriesXCollection[i].dataList;
-  //     if (data.isNotEmpty) {
-  //       List<int> startIndex = lineSeriesXCollection[i].startIndexes;
-  //       double yStep = size.height / yRanges[i];
-  //       Path linePath = Path();
-
-  //       Paint linePaint = Paint()
-  //         ..color = lineSeriesXCollection[i].color
-  //         ..strokeWidth = 2.0
-  //         ..strokeCap = StrokeCap.round
-  //         ..style = PaintingStyle.stroke;
-
-  //       // 找到第一個 value 不是 null 的 index
-  //       int firstIndex = data.indexWhere((element) => element.y != null);
-  //       if (firstIndex != -1) {
-  //         // line series value 不是全部都是 null, 至少有一個 value 不是null
-  //         for (int j = firstIndex; j < data.length; j++) {
-  //           double currentScaleX = (j * xStep);
-  //           double? currentScaleY =
-  //               data[j].y == null ? null : (maxValues[i] - data[j].y!) * yStep;
-
-  //           if (currentScaleY != null) {
-  //             if (j == firstIndex) {
-  //               linePath.moveTo(currentScaleX, currentScaleY);
-  //             }
-
-  //             // if previous index of value is null, Do not draw line near the point
-  //             if (startIndex.contains(j)) {
-  //               linePath.moveTo(currentScaleX, currentScaleY);
-  //             } else {
-  //               linePath.lineTo(currentScaleX, currentScaleY);
-  //             }
-  //           }
-  //         }
-
-  //         canvas.drawPath(linePath, linePaint);
-  //       }
-  //     }
-  //   }
-  // }
-
   void _drawLineSeriesForMultipleYAxises({
     required Canvas canvas,
     required Size size,
@@ -777,10 +648,7 @@ class LineChartPainter extends CustomPainter {
 
           if (currentY != null) {
             // Draw marker dot at each point
-            canvas.drawCircle(
-                Offset(currentX, currentY),
-                1.5, // Same size as in original _drawLineSeries
-                markerPaint);
+            canvas.drawCircle(Offset(currentX, currentY), 1.5, markerPaint);
 
             if (j == firstIndex) {
               linePath.moveTo(currentX, currentY);
