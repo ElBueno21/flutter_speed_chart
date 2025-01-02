@@ -50,7 +50,6 @@ class Legend extends StatelessWidget {
 
     Widget buildLegend() {
       return Wrap(
-        //mainAxisAlignment: MainAxisAlignment.center,
         children: [
           for (LineSeriesX lineSeries in lineSeriesXCollection) ...[
             buildTile(

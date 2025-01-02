@@ -109,7 +109,6 @@ class LineChartPainter extends CustomPainter {
 
       valueMapList.add(valueMap);
     }
-    // valueMapList = [{'name': value},{'name': value}]
     return valueMapList;
   }
 
@@ -305,9 +304,10 @@ class LineChartPainter extends CustomPainter {
         );
         multipleYAxisLabelPainter.layout();
         multipleYAxisLabelPainter.paint(
-            canvas,
-            Offset(newLeftOffset - multipleYAxisLabelPainter.width - 2,
-                scaleY - multipleYAxisLabelPainter.height / 2));
+          canvas,
+          Offset(newLeftOffset - multipleYAxisLabelPainter.width - 2,
+              scaleY - multipleYAxisLabelPainter.height / 2),
+        );
       }
     }
   }

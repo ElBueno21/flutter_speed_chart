@@ -195,34 +195,6 @@ class _SpeedLineChartState extends State<SpeedLineChart> {
     return minimumYAxisValue;
   }
 
-  // void setMinValueAndMaxValue() {
-  //   List<double?> allValues = _lineSeriesXCollection
-  //       .expand((lineSeries) => lineSeries.dataMap.values)
-  //       .toList();
-
-  //   allValues.removeWhere((element) => element == null);
-
-  //   if (allValues.isNotEmpty) {
-  //     // Find the actual min and max values
-  //     double actualMin = allValues
-  //         .reduce((value, element) => value! < element! ? value : element)!;
-  //     double actualMax = allValues
-  //         .reduce((value, element) => value! > element! ? value : element)!;
-
-  //     // Calculate the range
-  //     double range = actualMax - actualMin;
-
-  //     // Prevent division by zero or invalid range
-  //     double buffer = range > 0 ? range * 0.10 : 1.0;
-
-  //     _minValue = actualMin - buffer;
-  //     _maxValue = actualMax + buffer;
-  //   } else {
-  //     _minValue = 0.0;
-  //     _maxValue = 10.0;
-  //   }
-  // }
-
   void setMinValueAndMaxValue() {
     List<double?> allValues = _lineSeriesXCollection
         .expand((lineSeries) => lineSeries.dataMap.values)
@@ -400,10 +372,6 @@ class _SpeedLineChartState extends State<SpeedLineChart> {
 
       double left = calculateOffsetX(newScale, focusX);
 
-      // print('left: $left');
-
-      // print('extraX: $extraX');
-
       // 加上額外的水平偏移量
 
       left += extraX;
@@ -436,8 +404,6 @@ class _SpeedLineChartState extends State<SpeedLineChart> {
       lOffsetX = lOffsetX < 0 ? 0 : lOffsetX;
 
       rOffsetX = rOffsetX < 0 ? 0 : rOffsetX;
-
-      // print('_scale: $_scale');
 
       setState(() {
         _scale = newScale;
@@ -486,13 +452,9 @@ class _SpeedLineChartState extends State<SpeedLineChart> {
 
       double rOffsetX = ((_scale - 1) * widgetWidth + newOffsetX) / _scale;
 
-      // print('lOffsetX: ${lOffsetX} rOffsetX: $_scale, $widgetWidth, $newOffsetX, $rOffsetX');
-
       lOffsetX *= r;
 
       rOffsetX *= r;
-
-      // print('deltaX: ${details.delta.dx}, widgetWidth: $widgetWidth, r: $r');
 
       setState(() {
         _offset = newOffsetX;
@@ -511,8 +473,6 @@ class _SpeedLineChartState extends State<SpeedLineChart> {
       // 按鈕的左側的x (起點) = 觸控的x軸座標 - 前一次按鈕的左側到左邊起點的滑動距離
 
       _lastLeftSlidingBtnLeft = details.globalPosition.dx - _leftSlidingBtnLeft;
-
-      // print('_leftSlidingBtnLeft: ${_leftSlidingBtnLeft}');
     }
 
     _onLBHorizontalDragUpdate(DragUpdateDetails details) {
@@ -549,8 +509,6 @@ class _SpeedLineChartState extends State<SpeedLineChart> {
       double viewportWidth =
           maxViewportWidth - newLOffsetX - _rightSlidingBtnRight;
 
-      // print('maxViewportWidth: $maxViewportWidth, viewportWidth: $viewportWidth');
-
       // 最大視窗大小 / 目前視窗大小 = 應該縮放的倍數
 
       double newScale = maxViewportWidth / viewportWidth;
@@ -577,10 +535,6 @@ class _SpeedLineChartState extends State<SpeedLineChart> {
 
       _lastRightSlidingBtnRight =
           details.globalPosition.dx + _rightSlidingBtnRight;
-
-      // print('details.globalPosition.dx: ${details.globalPosition.dx}');
-
-      // print('_rightSlidingBtnRight: ${_rightSlidingBtnRight}');
     }
 
     _onRBHorizontalDragUpdate(DragUpdateDetails details) {
@@ -608,13 +562,9 @@ class _SpeedLineChartState extends State<SpeedLineChart> {
       double viewportWidth =
           maxViewportWidth - _leftSlidingBtnLeft - newROffsetX;
 
-      // print('maxViewportWidth: $maxViewportWidth, viewportWidth: $viewportWidth');
-
       // 最大視窗大小 / 目前視窗大小 = 應該縮放的倍數
 
       double newScale = maxViewportWidth / viewportWidth;
-
-      // print('newScale: $newScale');
 
       // 計算縮放後的左偏移量
 
@@ -740,8 +690,6 @@ class _SpeedLineChartState extends State<SpeedLineChart> {
 
       double left = _offset * widthDiff;
 
-      // print("left: $left, widthDiff: $widthDiff");
-
       _previousSize = _currentSize;
 
       // 將x範圍限制圖表寬度內
@@ -769,15 +717,11 @@ class _SpeedLineChartState extends State<SpeedLineChart> {
 
       // 因為使用 LayoutBuilder 所以不需要調用 setState
 
-      // setState(() {
-
       _offset = newOffsetX;
 
       _leftSlidingBtnLeft = lOffsetX;
 
       _rightSlidingBtnRight = rOffsetX;
-
-      // });
     }
 
     if (!widget.showMultipleYAxises) {
@@ -830,15 +774,11 @@ class _SpeedLineChartState extends State<SpeedLineChart> {
             ),
             GestureDetector(
               onScaleStart: (details) {
-                // print('Scale start');
-
                 // 當兩隻手指點擊縮放時取消 trackball
 
                 if (details.pointerCount == 2) {
                   setState(() {
                     if (_onPressTimer != null) {
-                      // print('cancel timer');
-
                       _onPressTimer!.cancel();
 
                       _onPressTimer = null;
@@ -863,11 +803,6 @@ class _SpeedLineChartState extends State<SpeedLineChart> {
                 _lastUpdateFocalPointX = details.focalPoint.dx;
               },
               onScaleUpdate: (details) {
-                // newScale >= 1.0, 否則計算 left.clamp((newScale - 1) * -widgetWidth, 0.0) 時範圍會錯誤
-
-                debugPrint(
-                    'Scale update ${details.focalPoint.dx}, $_lastUpdateFocalPointX');
-
                 if (_showTrackball) {
                   setState(() {
                     _longPressX = details.focalPoint.dx - _leftOffset;
@@ -900,8 +835,6 @@ class _SpeedLineChartState extends State<SpeedLineChart> {
                         (_xRange - 1);
                   }
 
-                  // print('xStep: ${xStep}, newScale: ${newScale}');
-
                   // 最大 scale 為畫面上至少要有一個點
 
                   // xStep 要小於整個 chart 的寬度
@@ -914,12 +847,8 @@ class _SpeedLineChartState extends State<SpeedLineChart> {
                 }
               },
               onScaleEnd: (details) {
-                // print('Scale end');
-
                 setState(() {
                   if (_onPressTimer != null) {
-                    // print('cancel timer');
-
                     _onPressTimer!.cancel();
 
                     _onPressTimer = null;
@@ -931,12 +860,8 @@ class _SpeedLineChartState extends State<SpeedLineChart> {
                 });
               },
               onTapDown: (details) {
-                debugPrint('onTapDown');
-
                 _onPressTimer ??= Timer(const Duration(milliseconds: 200), () {
                   // 時間到的時候判斷按下是否有移動, 如果沒有則顯示 trackball
-
-                  // print('timer ${_deltaFocalPointX}');
 
                   if (_deltaFocalPointX == 0) {
                     setState(() {
@@ -952,12 +877,8 @@ class _SpeedLineChartState extends State<SpeedLineChart> {
 
                 // 不按時 _showTrackball = false
 
-                // print('onTapUp');
-
                 setState(() {
                   if (_onPressTimer != null) {
-                    // print('cancel timer');
-
                     _onPressTimer!.cancel();
 
                     _onPressTimer = null;
@@ -971,8 +892,6 @@ class _SpeedLineChartState extends State<SpeedLineChart> {
               onVerticalDragUpdate: (details) {
                 // 按下時往垂直方向移動(或不是水平移動)就會觸發這裡的update 事件而不會觸發 onScaleUpdate, 所以在這裡也更新長按的點
 
-                // print('onVerticalDragUpdate ${details.localPosition.dx}');
-
                 if (_showTrackball) {
                   setState(() {
                     _longPressX = details.localPosition.dx - _leftOffset;
@@ -980,12 +899,8 @@ class _SpeedLineChartState extends State<SpeedLineChart> {
                 }
               },
               onVerticalDragEnd: (details) {
-                // print('onVerticalDragEnd');
-
                 setState(() {
                   if (_onPressTimer != null) {
-                    // print('cancel timer');
-
                     _onPressTimer!.cancel();
 
                     _onPressTimer = null;
@@ -1000,8 +915,6 @@ class _SpeedLineChartState extends State<SpeedLineChart> {
                 // 按下時直接往水平方向移動會觸發
 
                 // 也會觸發onScaleUpdate
-
-                // print('onVerticalDragCancel');
               },
               child: CustomPaint(
                 size: Size(
