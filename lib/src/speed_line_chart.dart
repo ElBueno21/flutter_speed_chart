@@ -38,7 +38,7 @@ class SpeedLineChart extends StatefulWidget {
   final TextStyle legendTextStyle;
   final Color scaleThumbsColor;
   final List<PlotBand> plotBands;
-  final String timeZoneAbrv;
+  final String timeZoneAbbr;
 
   const SpeedLineChart({
     Key? key,
@@ -60,7 +60,7 @@ class SpeedLineChart extends StatefulWidget {
     ),
     this.scaleThumbsColor = Colors.black,
     this.plotBands = const [],
-    this.timeZoneAbrv = 'UTC',
+    this.timeZoneAbbr = 'UTC',
   }) : super(key: key);
 
   @override
@@ -305,7 +305,7 @@ class _SpeedLineChartState extends State<SpeedLineChart> {
       ..strokeWidth = 1;
 
     final Paint verticalLinePaint = Paint()
-      ..color = Theme.of(context).colorScheme.onSurface
+      ..color = Colors.white
       ..strokeWidth = 1.0
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
@@ -941,7 +941,7 @@ class _SpeedLineChartState extends State<SpeedLineChart> {
                   axisPaint: axisPaint,
                   verticalLinePaint: verticalLinePaint,
                   plotBands: widget.plotBands,
-                  timeZoneAbrv: widget.timeZoneAbrv,
+                  timeZoneAbbr: widget.timeZoneAbbr,
                 ),
               ),
             ),

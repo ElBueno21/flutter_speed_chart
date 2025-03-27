@@ -26,7 +26,7 @@ class LineChartPainter extends CustomPainter {
     required this.axisPaint,
     required this.verticalLinePaint,
     required this.plotBands,
-    required this.timeZoneAbrv,
+    required this.timeZoneAbbr,
   });
 
   final List<LineSeriesX> lineSeriesXCollection;
@@ -48,7 +48,7 @@ class LineChartPainter extends CustomPainter {
   final Paint axisPaint;
   final Paint verticalLinePaint;
   final List<PlotBand> plotBands;
-  final String timeZoneAbrv;
+  final String timeZoneAbbr;
   final TextPainter _axisLabelPainter = TextPainter(
     textAlign: TextAlign.right,
     textDirection: ui.TextDirection.ltr,
@@ -113,7 +113,7 @@ class LineChartPainter extends CustomPainter {
   }
 
   String _formatDate(DateTime date) {
-    return '${DateFormat('yyyy-MM-dd HH:mm:ss').format(date)} $timeZoneAbrv';
+    return '${DateFormat('yyyy-MM-dd HH:mm:ss').format(date)} $timeZoneAbbr';
   }
 
   // Draw Y-Axis
