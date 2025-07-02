@@ -60,7 +60,7 @@ class LineChartPainter extends CustomPainter {
   );
 
   final Paint _gridPaint = Paint()
-    ..color = Colors.grey.withOpacity(0.4)
+    ..color = Colors.grey.withAlpha((0.4 * 255).toInt())
     ..strokeWidth = 1;
 
   final Paint _dividerPaint = Paint()
@@ -760,7 +760,7 @@ class LineChartPainter extends CustomPainter {
     for (final plotBand in plotBands) {
       if (plotBand.isValid()) {
         final paint = Paint()
-          ..color = plotBand.color.withOpacity(plotBand.opacity)
+          ..color = plotBand.color.withAlpha((plotBand.opacity * 255).toInt())
           ..style = PaintingStyle.fill;
 
         // Get the actual data points for reference
