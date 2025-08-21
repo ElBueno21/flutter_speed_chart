@@ -27,6 +27,7 @@ class LineChartPainter extends CustomPainter {
     required this.verticalLinePaint,
     required this.plotBands,
     required this.timeZoneAbbr,
+    this.trackballNameMaxLength,
   });
 
   final List<LineSeriesX> lineSeriesXCollection;
@@ -49,6 +50,7 @@ class LineChartPainter extends CustomPainter {
   final Paint verticalLinePaint;
   final List<PlotBand> plotBands;
   final String timeZoneAbbr;
+  final int? trackballNameMaxLength;
   final TextPainter _axisLabelPainter = TextPainter(
     textAlign: TextAlign.right,
     textDirection: ui.TextDirection.ltr,
@@ -405,11 +407,21 @@ class LineChartPainter extends CustomPainter {
     Map<int, String> tips = {-1: formatXLabel};
 
     // Add line series values first (positive keys)
+    // for (Map<int, double?> valueMap in valueMapList) {
+    //   MapEntry nameValueEntry = valueMap.entries.toList()[0];
+    //   if (nameValueEntry.value != null) {
+    //     tips[nameValueEntry.key] =
+    //         '${lineSeriesXCollection[nameValueEntry.key].name} : ${nameValueEntry.value}';
+    //   }
+    // }
+
+    // Add line series values first (positive keys)
     for (Map<int, double?> valueMap in valueMapList) {
       MapEntry nameValueEntry = valueMap.entries.toList()[0];
       if (nameValueEntry.value != null) {
-        tips[nameValueEntry.key] =
-            '${lineSeriesXCollection[nameValueEntry.key].name} : ${nameValueEntry.value}';
+        String displayName =
+            _truncateName(lineSeriesXCollection[nameValueEntry.key].name);
+        tips[nameValueEntry.key] = '$displayName : ${nameValueEntry.value}';
       }
     }
 
@@ -660,6 +672,14 @@ class LineChartPainter extends CustomPainter {
         canvas.drawPath(linePath, linePaint);
       }
     }
+  }
+
+  String _truncateName(String name) {
+    if (trackballNameMaxLength == null ||
+        name.length <= trackballNameMaxLength!) {
+      return name;
+    }
+    return '${name.substring(0, trackballNameMaxLength!)}…';
   }
 
   @override

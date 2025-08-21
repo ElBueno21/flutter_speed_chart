@@ -39,6 +39,7 @@ class SpeedLineChart extends StatefulWidget {
   final Color scaleThumbsColor;
   final List<PlotBand> plotBands;
   final String timeZoneAbbr;
+  final int? trackballNameMaxLength; 
 
   const SpeedLineChart({
     Key? key,
@@ -61,6 +62,7 @@ class SpeedLineChart extends StatefulWidget {
     this.scaleThumbsColor = Colors.black,
     this.plotBands = const [],
     this.timeZoneAbbr = 'UTC',
+    this.trackballNameMaxLength,
   }) : super(key: key);
 
   @override
@@ -942,6 +944,7 @@ class _SpeedLineChartState extends State<SpeedLineChart> {
                   verticalLinePaint: verticalLinePaint,
                   plotBands: widget.plotBands,
                   timeZoneAbbr: widget.timeZoneAbbr,
+                  trackballNameMaxLength: widget.trackballNameMaxLength
                 ),
               ),
             ),
